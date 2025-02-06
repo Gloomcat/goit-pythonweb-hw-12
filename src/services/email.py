@@ -23,6 +23,20 @@ conf = ConnectionConfig(
 
 
 async def send_email(email: EmailStr, username: str, host: str):
+    """
+    Sends a verification email to the user.
+
+    This function generates an email verification token and sends an email
+    to the provided address using FastMail.
+
+    Args:
+        email (EmailStr): The recipient's email address.
+        username (str): The username of the recipient.
+        host (str): The server host used for constructing the verification link.
+
+    Raises:
+        ConnectionErrors: If there is an issue with the email server connection.
+    """
     try:
         token_verification = create_email_token({"sub": email})
         message = MessageSchema(

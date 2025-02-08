@@ -106,7 +106,9 @@ async def test_update_avatar_url(user_repository, sample_user, mock_db_session):
     mock_result.scalar_one_or_none.return_value = sample_user
     mock_db_session.execute = AsyncMock(return_value=mock_result)
 
-    result = await user_repository.update_avatar_url("test@example.com", "http://new-avatar.com")
+    result = await user_repository.update_avatar_url(
+        "test@example.com", "http://new-avatar.com"
+    )
 
     assert result.avatar == "http://new-avatar.com"
     mock_db_session.commit.assert_called_once()

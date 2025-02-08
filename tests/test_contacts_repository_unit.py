@@ -132,7 +132,8 @@ async def test_update_contact(contact_repository, sample_user, mock_db_session):
         first_name="Alice",
         last_name="Smith",
         email="alice@example.com",
-        phone="+380671234868")
+        phone="+380671234868",
+    )
 
     mock_result = MagicMock()
     mock_result.scalar_one_or_none.return_value = mock_contact
@@ -172,8 +173,7 @@ async def test_remove_contact(contact_repository, sample_user, mock_db_session):
 async def test_create_contact_with_duplicate_values(
     contact_repository, sample_user, sample_contact_data, mock_db_session
 ):
-    mock_db_session.commit.side_effect = IntegrityError(
-        "Duplicate entry", {}, None)
+    mock_db_session.commit.side_effect = IntegrityError("Duplicate entry", {}, None)
 
     with pytest.raises(IntegrityError):
         await contact_repository.create_contact(sample_user, sample_contact_data)
@@ -207,7 +207,8 @@ async def test_update_nonexistent_contact(
         first_name="Alice",
         last_name="Smith",
         email="alice@example.com",
-        phone="+380671234868")
+        phone="+380671234868",
+    )
     result = await contact_repository.update_contact(sample_user, 999, updated_data)
 
     assert result is None

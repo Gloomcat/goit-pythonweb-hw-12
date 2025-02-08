@@ -1,10 +1,10 @@
-from datetime import timedelta
+from datetime import timedelta, datetime
 from faker import Faker
 from faker.providers.phone_number import Provider
 from random import randint, choice
 from typing import List
 
-from sqlalchemy import select, func, Interval
+from sqlalchemy import select, func, case, text, Interval
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.models import Contact
@@ -202,12 +202,29 @@ class ContactRepository:
         Returns:
             Column: A SQL expression for age calculation.
         """
-        stmt = func.age(
-            (date_col - func.cast(timedelta(next_days), Interval))
-            if next_days != 0
-            else date_col
-        )
-        stmt = func.date_part("year", stmt)
+        if self.db.bind.dialect.name == "sqlite":
+            future_date = (datetime.now() + timedelta(days=next_days)).strftime(
+                "%Y-%m-%d"
+            )
+            stmt = (
+                func.strftime("%Y", text(f"'{future_date}'"))
+                - func.strftime("%Y", date_col)
+                - case(
+                    (
+                        func.strftime("%m-%d", text(f"'{future_date}'"))
+                        < func.strftime("%m-%d", date_col),
+                        1,
+                    ),
+                    else_=0,
+                )
+            )
+        else:
+            stmt = func.age(
+                (date_col - func.cast(timedelta(next_days), Interval))
+                if next_days != 0
+                else date_col
+            )
+            stmt = func.date_part("year", stmt)
         return stmt
 
     def _has_birthday_next_days(self, date_col, next_days: int = 0):

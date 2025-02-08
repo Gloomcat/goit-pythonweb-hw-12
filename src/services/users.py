@@ -92,3 +92,16 @@ class UserService:
             None
         """
         return await self.repository.confirmed_email(email)
+
+    async def update_password(self, email: str, password: str):
+        """
+        Updates the password of a user.
+
+        Args:
+            email (str): The email of the user.
+            password (str): The new password.
+
+        Returns:
+            None
+        """
+        await self.repository.update_password(email, password)

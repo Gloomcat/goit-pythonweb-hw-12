@@ -18,21 +18,23 @@ conf = ConnectionConfig(
     MAIL_SSL_TLS=settings.MAIL_SSL_TLS,
     USE_CREDENTIALS=settings.USE_CREDENTIALS,
     VALIDATE_CERTS=settings.VALIDATE_CERTS,
-    TEMPLATE_FOLDER=Path(__file__).parent / "templates",
+    TEMPLATE_FOLDER=Path(__file__).parent.parent / "templates"
 )
 
 
-async def send_email(email: EmailStr, username: str, host: str):
+async def send_email(email: EmailStr, username: str, host: str, subject: str, template_name: str):
     """
-    Sends a verification email to the user.
+    Sends an email to the user.
 
-    This function generates an email verification token and sends an email
+    This function generates a token and sends an email
     to the provided address using FastMail.
 
     Args:
         email (EmailStr): The recipient's email address.
         username (str): The username of the recipient.
-        host (str): The server host used for constructing the verification link.
+        host (str): The server host used for constructing the link.
+        subject (str): The subject for the email message
+        template_name (str): The html template for the email message
 
     Raises:
         ConnectionErrors: If there is an issue with the email server connection.
@@ -40,7 +42,7 @@ async def send_email(email: EmailStr, username: str, host: str):
     try:
         token_verification = create_email_token({"sub": email})
         message = MessageSchema(
-            subject="Confirm your email",
+            subject=subject,
             recipients=[email],
             template_body={
                 "host": host,
@@ -51,6 +53,6 @@ async def send_email(email: EmailStr, username: str, host: str):
         )
 
         fm = FastMail(conf)
-        await fm.send_message(message, template_name="verify_email.html")
+        await fm.send_message(message, template_name=template_name)
     except ConnectionErrors as err:
         print(err)

@@ -1,6 +1,6 @@
 from typing import List
 
-from fastapi import APIRouter, HTTPException, status, Request, UploadFile, Depends, File
+from fastapi import APIRouter, Request, UploadFile, Depends, File
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy.ext.asyncio import AsyncSession

@@ -110,3 +110,18 @@ class UserRepository:
         user = await self.get_user_by_email(email)
         user.confirmed = True
         await self.db.commit()
+
+    async def update_password(self, email: str, password: str) -> None:
+        """
+        Updates the password of a user.
+
+        Args:
+            email (str): The email of the user whose password is being updated.
+            password (str): Hashed password.
+
+        Returns:
+            None
+        """
+        user = await self.get_user_by_email(email)
+        user.hashed_password = password
+        await self.db.commit()

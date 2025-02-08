@@ -1,5 +1,9 @@
-from fastapi import APIRouter, HTTPException, status, Request, BackgroundTasks, Depends
+from pathlib import Path
+
+from fastapi import APIRouter, HTTPException, status, Request, BackgroundTasks, Depends, Form
+from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.templating import Jinja2Templates
 from libgravatar import Gravatar
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,6 +15,7 @@ from src.services.email import send_email
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+templates = Jinja2Templates(directory=str(Path(__file__).parent.parent / "templates"))
 
 
 @router.post("/login", response_model=Token, status_code=status.HTTP_201_CREATED)
@@ -96,7 +101,7 @@ async def register_user(
 
     new_user = await user_service.create_user(user_data)
     background_tasks.add_task(
-        send_email, new_user.email, new_user.username, request.base_url
+        send_email, new_user.email, new_user.username, request.base_url, "Confirm your email", "verify_email.html"
     )
     return new_user
 
@@ -128,16 +133,17 @@ async def confirmed_email(token: str, db: AsyncSession = Depends(get_db)):
     await user_service.confirmed_email(email)
     return {"message": "Your email is verified"}
 
-
-@router.post("/request_email")
-async def request_email(
+@router.post(
+    "/forgot_password", status_code=status.HTTP_202_ACCEPTED
+)
+async def forgot_password(
     body: RequestEmail,
     background_tasks: BackgroundTasks,
     request: Request,
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Sends a verification email if the user's email is not already verified.
+    Sends a password reset email on user request.
 
     Args:
         body (RequestEmail): The email address of the user.
@@ -146,15 +152,76 @@ async def request_email(
         db (AsyncSession): Database session dependency.
 
     Returns:
-        dict: A message indicating whether an email was sent.
+        dict: A message indicating request accepted.
     """
     user_service = UserService(db)
-    user = await user_service.get_user_by_email(body.email)
 
-    if user.confirmed:
-        return {"message": "Your email is already verified"}
-    if user:
+    user = await user_service.get_user_by_email(body.email)
+    if user and user.confirmed:
         background_tasks.add_task(
-            send_email, user.email, user.username, request.base_url
+            send_email, user.email, user.username, request.base_url, "Password reset", "password_reset.html"
         )
-    return {"message": "Check your email for verification"}
+
+    return { "message": "Password reset requested." }
+
+
+@router.get("/reset_password/{token}", response_class=HTMLResponse)
+async def reset_password_form(request: Request, token: str, db: AsyncSession = Depends(get_db)):
+    """
+    Serves the password reset form for the given token.
+
+    This endpoint renders the password reset form for the token if the user exists and is confirmed.
+
+    Args:
+        request (Request): The incoming request object.
+        token (str): The password reset token.
+        db (AsyncSession): Database session dependency.
+
+    Returns:
+        TemplateResponse: The password reset form with the token included in the context.
+
+    Raises:
+        HTTPException: If the user is not found or not confirmed.
+    """
+    email = await get_email_from_token(token)
+
+    user_service = UserService(db)
+    user = await user_service.get_user_by_email(email)
+    if user is None or not user.confirmed:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Verification error"
+        )
+
+    return templates.TemplateResponse("password_reset_form.html", {"request": request, "token": token})
+
+
+
+@router.post("/reset_password/{token}", status_code=status.HTTP_201_CREATED
+)
+async def reset_password(token: str, password: str = Form(),  db: AsyncSession = Depends(get_db)):
+    """
+    Resets the user's password.
+
+    Args:
+        token (str): Password reset token.
+        password (str): New password from form data.
+        db (AsyncSession): Database session.
+
+    Returns:
+        dict: Message about successfull password reset.
+
+    Raises:
+        HTTPException: If verification fails or the user is not found.
+    """
+    email = await get_email_from_token(token)
+
+    user_service = UserService(db)
+    user = await user_service.get_user_by_email(email)
+    if user is None or not user.confirmed:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Verification error"
+        )
+
+    hashed_password = Hash().get_password_hash(password)
+    await user_service.update_password(email, hashed_password)
+    return {"message": "Password reset successfully"}

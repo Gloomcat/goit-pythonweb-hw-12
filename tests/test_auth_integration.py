@@ -47,6 +47,8 @@ async def test_register_user(
         test_user_register["email"],
         test_user_register["username"],
         "http://testserver/",
+        "Confirm your email",
+        "verify_email.html",
     )
 
 
@@ -126,25 +128,71 @@ async def test_confirmed_email(
 
 @pytest.mark.asyncio
 @patch("src.services.users.UserService.get_user_by_email")
-@patch("src.services.email.send_email")
-async def test_request_email_verification(mock_send_email, mock_get_user, client):
-    request_data = {"email": test_user["email"]}
-
+# apply patch to imported function in a module, not original
+@patch("src.api.auth.send_email")
+async def test_forgot_password_existing_user(mock_send_email, mock_get_user, client):
+    email = "testuser@example.com"
     mock_get_user.return_value = User(
-        id=1,
-        username=test_user["username"],
-        email=test_user["email"],
-        hashed_password=Hash().get_password_hash(test_user["password"]),
-        avatar=test_user["avatar"],
-        confirmed=True,
+        id=1, username="testuser", email=email, confirmed=True
     )
 
-    response = client.post("/api/auth/request_email", json=request_data)
+    response = client.post("/api/auth/forgot_password", json={"email": email})
 
-    assert response.status_code == 200, response.text
-    data = response.json()
-    assert data["message"] == "Your email is already verified"
+    assert response.status_code == 202
+    assert response.json() == {"message": "Password reset requested."}
+    mock_send_email.assert_called_once_with(
+        email,
+        "testuser",
+        "http://testserver/",
+        "Password reset",
+        "password_reset.html",
+    )
 
-    mock_get_user.assert_called_once()
-    # Since email is already verified, email shouldn't be sent
-    mock_send_email.assert_not_called()
+
+@pytest.mark.asyncio
+@patch("src.services.users.UserService.get_user_by_email")
+async def test_forgot_password_nonexistent_user(mock_get_user, client):
+    mock_get_user.return_value = None
+
+    response = client.post("/api/auth/forgot_password",
+                           json={"email": "nonexistent@example.com"})
+
+    assert response.status_code == 202
+    assert response.json() == {"message": "Password reset requested."}
+
+
+@pytest.mark.asyncio
+@patch("src.api.auth.get_email_from_token")
+@patch("src.services.users.UserService.get_user_by_email")
+async def test_reset_password_form(mock_get_user, mock_get_email, client):
+    token = "valid_token"
+    mock_get_email.return_value = "testuser@example.com"
+    mock_get_user.return_value = User(
+        id=1, username="testuser", email="testuser@example.com", confirmed=True
+    )
+
+    response = client.get(f"/api/auth/reset_password/{token}")
+
+    assert response.status_code == 200
+    assert "Reset Your Password" in response.text
+
+
+@pytest.mark.asyncio
+@patch("src.api.auth.get_email_from_token")
+@patch("src.services.users.UserService.get_user_by_email")
+@patch("src.services.users.UserService.update_password")
+async def test_reset_password_success(mock_update_password, mock_get_user, mock_get_email, client):
+    token = "valid_token"
+    new_password = "newsecurepassword123"
+    mock_get_email.return_value = "testuser@example.com"
+    mock_get_user.return_value = User(
+        id=1, username="testuser", email="testuser@example.com", confirmed=True
+    )
+    mock_update_password.return_value = None
+
+    response = client.post(
+        f"/api/auth/reset_password/{token}", data={"password": new_password})
+
+    assert response.status_code == 201
+    assert response.json() == {"message": "Password reset successfully"}
+    mock_update_password.assert_called_once()

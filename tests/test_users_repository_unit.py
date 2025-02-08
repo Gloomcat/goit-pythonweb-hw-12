@@ -114,3 +114,14 @@ async def test_confirmed_email(user_repository, sample_user, mock_db_session):
 
     assert sample_user.confirmed is True
     mock_db_session.commit.assert_called_once()
+
+@pytest.mark.asyncio
+async def test_update_password(user_repository, sample_user, mock_db_session):
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = sample_user
+    mock_db_session.execute = AsyncMock(return_value=mock_result)
+
+    await user_repository.update_password("test@example.com", "87654321hashed")
+
+    assert sample_user.hashed_password == "87654321hashed"
+    mock_db_session.commit.assert_called_once()

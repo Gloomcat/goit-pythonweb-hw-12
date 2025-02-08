@@ -192,7 +192,7 @@ async def reset_password_form(request: Request, token: str, db: AsyncSession = D
             status_code=status.HTTP_400_BAD_REQUEST, detail="Verification error"
         )
 
-    return templates.TemplateResponse("password_reset_form.html", {"request": request, "token": token})
+    return templates.TemplateResponse({"request": request, "token": token}, "password_reset_form.html")
 
 
 

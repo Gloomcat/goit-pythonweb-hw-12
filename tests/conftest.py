@@ -3,12 +3,16 @@ import pytest
 
 from datetime import timedelta, datetime
 
+import redis.asyncio as redis
+
 from fastapi.testclient import TestClient
 from sqlalchemy.pool import StaticPool
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
+from unittest.mock import AsyncMock
+
 from main import app
-from src.database.models import Base, User, Contact, UserRole
+from src.database.models import Base, User, Contact
 from src.database.db import get_db
 from src.services.auth import create_access_token, Hash
 
@@ -122,3 +126,17 @@ def client():
 @pytest.fixture()
 def get_token():
     return create_access_token(data={"sub": test_user["username"]})
+
+
+@pytest.fixture(scope="module", autouse=True)
+def mock_redis_client():
+    from src.services.cache import redis_client
+
+    mock_redis = AsyncMock(spec=redis.Redis)
+    mock_redis.get = AsyncMock(return_value=None)
+    mock_redis.set = AsyncMock(return_value=True)
+
+    redis_client.get = mock_redis.get
+    redis_client.set = mock_redis.set
+
+    yield mock_redis

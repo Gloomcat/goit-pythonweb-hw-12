@@ -12,6 +12,7 @@ from src.database.db import get_db
 from src.database.models import User, UserRole
 from src.conf.config import settings
 from src.services.users import UserService
+from src.services.cache import get_cached_current_user
 
 
 class Hash:
@@ -147,6 +148,10 @@ async def get_current_user(
             raise credentials_exception
     except InvalidTokenError:
         raise credentials_exception
+
+    cached_user = await get_cached_current_user(username)
+    if cached_user:
+        return cached_user
 
     user_service = UserService(db)
     user = await user_service.get_user_by_username(username)

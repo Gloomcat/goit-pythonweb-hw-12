@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.database.db import get_db
 from src.conf.config import settings
 from src.schemas.users import UserDetail
+from src.services.cache import update_cached_current_user
 from src.services.users import UserService
 from src.services.auth import get_current_user, get_current_admin_user
 from src.services.upload_file import UploadFileService
@@ -57,5 +58,6 @@ async def update_user_avatar(
 
     user_service = UserService(db)
     user = await user_service.update_avatar_url(user.email, avatar_url)
+    await update_cached_current_user(user)
 
     return user

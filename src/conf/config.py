@@ -54,6 +54,9 @@ class Settings(BaseSettings):
     CLD_API_KEY: int = 123456789012345
     CLD_API_SECRET: str = "a0cde0GhIJk-lMnopQRSTUVWXyz"
 
+    REDIS_HOST: str = "redis",
+    REDIS_PORT: int = 6379,
+
     model_config = ConfigDict(
         extra="ignore", env_file=".env", env_file_encoding="utf-8", case_sensitive=True
     )

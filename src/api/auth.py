@@ -12,6 +12,7 @@ from src.services.users import UserService
 from src.schemas.users import UserDetail, UserCreate, Token, RequestEmail
 from src.services.auth import create_access_token, get_email_from_token, Hash
 from src.services.email import send_email
+from src.services.cache import update_cached_current_user
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -49,6 +50,7 @@ async def login_user(
             detail="Email address is not verified",
         )
 
+    await update_cached_current_user(user)
     access_token = create_access_token(data={"sub": user.username})
     return {"access_token": access_token, "token_type": "bearer"}
 
@@ -131,6 +133,7 @@ async def confirmed_email(token: str, db: AsyncSession = Depends(get_db)):
     if user.confirmed:
         return {"message": "Your email is already verified"}
     await user_service.confirmed_email(email)
+    await update_cached_current_user(user)
     return {"message": "Your email is verified"}
 
 @router.post(
@@ -224,4 +227,5 @@ async def reset_password(token: str, password: str = Form(),  db: AsyncSession =
 
     hashed_password = Hash().get_password_hash(password)
     await user_service.update_password(email, hashed_password)
+    await update_cached_current_user(user)
     return {"message": "Password reset successfully"}

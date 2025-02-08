@@ -18,13 +18,14 @@ class User(Base):
     """
     Represents a user in the application.
 
-    Attributes:
-        id (int): Unique identifier for the user.
-        username (str): The user's username (must be unique).
-        hashed_password (str): The user's password, stored as a hash.
-        email (str, optional): The user's email address (must be unique).
+     Attributes:
+        id (int): Unique identifier for the user (primary key).
+        username (str): The user's unique username (max length: 150 characters).
+        hashed_password (str): The user's hashed password for secure storage.
+        email (str, optional): The user's unique email address.
+        role (UserRole): The user's role in the application (default: UserRole.USER).
         avatar (str, optional): URL to the user's avatar image.
-        confirmed (bool): Whether the user's email has been verified.
+        confirmed (bool): Indicates whether the user's email has been verified (default: False).
     """
 
     __tablename__ = "users"

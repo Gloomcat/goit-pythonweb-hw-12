@@ -1,4 +1,11 @@
+from enum import Enum
+
 from pydantic import BaseModel, EmailStr
+
+
+class UserRole(str, Enum):
+    USER = "user"
+    ADMIN = "admin"
 
 
 class UserDetail(BaseModel):
@@ -15,6 +22,7 @@ class UserDetail(BaseModel):
     id: int
     username: str
     email: str
+    role: UserRole
     avatar: str | None
 
 
@@ -31,6 +39,7 @@ class UserCreate(BaseModel):
     username: str
     email: EmailStr
     password: str
+    role: UserRole
 
 
 class Token(BaseModel):

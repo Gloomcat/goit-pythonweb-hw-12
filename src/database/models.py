@@ -1,11 +1,17 @@
+from enum import Enum
 from datetime import date
 from typing import Optional
 
-from sqlalchemy import Integer, String, ForeignKey, Column, Boolean
+from sqlalchemy import Integer, String, ForeignKey, Column, Boolean, Enum as SqlEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql.sqltypes import Date
 
 from src.database.db import Base
+
+
+class UserRole(str, Enum):
+    USER = "user"
+    ADMIN = "admin"
 
 
 class User(Base):
@@ -27,6 +33,7 @@ class User(Base):
     username: Mapped[str] = mapped_column(String(150), nullable=False, unique=True)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     email: Mapped[str] = mapped_column(String, unique=True, nullable=True)
+    role = Column(SqlEnum(UserRole), default=UserRole.USER, nullable=False)
     avatar: Mapped[str] = mapped_column(String(255), nullable=True)
     confirmed: Mapped[bool] = mapped_column(Boolean, default=False)
 

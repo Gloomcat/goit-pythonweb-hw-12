@@ -9,6 +9,7 @@ from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
 from src.database.db import get_db
+from src.database.models import User, UserRole
 from src.conf.config import settings
 from src.services.users import UserService
 
@@ -153,3 +154,9 @@ async def get_current_user(
         raise credentials_exception
 
     return user
+
+
+def get_current_admin_user(current_user: User = Depends(get_current_user)):
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Insufficient access rights")
+    return current_user

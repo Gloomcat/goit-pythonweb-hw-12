@@ -27,6 +27,7 @@ async def test_register_user(
         username=test_user_register["username"],
         email=test_user_register["email"],
         avatar=test_user_register["avatar"],
+        role=test_user_register["role"],
         confirmed=False,
     )
 
@@ -37,6 +38,7 @@ async def test_register_user(
     data = response.json()
     assert data["username"] == test_user_register["username"]
     assert data["email"] == test_user_register["email"]
+    assert data["role"] == test_user_register["role"]
     assert "avatar" in data
 
     mock_create_user.assert_called_once()

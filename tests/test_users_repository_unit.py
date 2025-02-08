@@ -9,25 +9,16 @@ from src.schemas.users import UserCreate
 
 @pytest.fixture
 def mock_db_session():
-    """
-    Provides a mock database session using AsyncMock.
-    """
     return AsyncMock(spec=AsyncSession)
 
 
 @pytest.fixture
 def user_repository(mock_db_session):
-    """
-    Provides an instance of UserRepository with a mocked session.
-    """
     return UserRepository(mock_db_session)
 
 
 @pytest.fixture
 def sample_user():
-    """
-    Provides a sample user ORM instance for testing.
-    """
     return User(
         id=1,
         username="testuser",
@@ -40,13 +31,11 @@ def sample_user():
 
 @pytest.fixture
 def sample_user_data():
-    """
-    Provides a sample user creation model for testing.
-    """
     return UserCreate(
         username="testuser",
         email="test@example.com",
         password="securepassword",
+        role="user",
     )
 
 

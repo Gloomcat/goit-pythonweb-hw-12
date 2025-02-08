@@ -8,7 +8,7 @@ from sqlalchemy.pool import StaticPool
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
 from main import app
-from src.database.models import Base, User, Contact
+from src.database.models import Base, User, Contact, UserRole
 from src.database.db import get_db
 from src.services.auth import create_access_token, Hash
 
@@ -28,6 +28,7 @@ test_user = {
     "username": "testuser",
     "email": "testuser@example.com",
     "password": "12345678",
+    "role": "admin",
     "avatar": "https://twitter.com/gravatar",
 }
 
@@ -36,6 +37,7 @@ test_user_register = {
     "username": "testuserregister",
     "email": "testuserregister@example.com",
     "password": "12345678",
+    "role": "user",
     "avatar": "https://twitter.com/gravatar",
 }
 
@@ -52,6 +54,7 @@ def init_models_wrap():
                 username=test_user["username"],
                 email=test_user["email"],
                 hashed_password=hash_password,
+                role=test_user["role"],
                 confirmed=True,
                 avatar="https://twitter.com/gravatar",
             )

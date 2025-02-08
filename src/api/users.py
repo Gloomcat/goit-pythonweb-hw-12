@@ -9,7 +9,7 @@ from src.database.db import get_db
 from src.conf.config import settings
 from src.schemas.users import UserDetail
 from src.services.users import UserService
-from src.services.auth import get_current_user
+from src.services.auth import get_current_user, get_current_admin_user
 from src.services.upload_file import UploadFileService
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -37,7 +37,7 @@ async def me(request: Request, user: UserDetail = Depends(get_current_user)):
 @router.patch("/avatar", response_model=UserDetail)
 async def update_user_avatar(
     file: UploadFile = File(),
-    user: UserDetail = Depends(get_current_user),
+    user: UserDetail = Depends(get_current_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
     """
